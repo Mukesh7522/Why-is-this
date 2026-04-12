@@ -1,0 +1,21 @@
+{
+  "name": "@why-is-this/embeddings",
+  "version": "0.1.0",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "test": "jest"
+  },
+  "devDependencies": {
+    "jest": "*",
+    "ts-jest": "*",
+    "@types/jest": "*",
+    "typescript": "*"
+  },
+  "jest": {
+    "preset": "ts-jest",
+    "testEnvironment": "node",
+    "roots": ["<rootDir>/src"]
+  }
+}

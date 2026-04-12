@@ -1,0 +1,26 @@
+{
+  "name": "@why-is-this/core",
+  "version": "0.1.0",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "test": "jest",
+    "dev": "tsc --watch"
+  },
+  "dependencies": {
+    "simple-git": "^3.22.0",
+    "@octokit/rest": "^20.0.0"
+  },
+  "devDependencies": {
+    "jest": "*",
+    "ts-jest": "*",
+    "@types/jest": "*",
+    "typescript": "*"
+  },
+  "jest": {
+    "preset": "ts-jest",
+    "testEnvironment": "node",
+    "roots": ["<rootDir>/src"]
+  }
+}
