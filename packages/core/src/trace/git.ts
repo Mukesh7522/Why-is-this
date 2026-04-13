@@ -41,7 +41,7 @@ export function parsePrReference(message: string): number | null {
     /closes\s+#(\d+)/i,
     /fixes\s+#(\d+)/i,
     /PR\s+#(\d+)/i,
-    /!(\d+)/,
+    /(?:^|\s)!(\d+)/,
   ];
   for (const p of patterns) {
     const m = message.match(p);
@@ -76,27 +76,29 @@ export async function blameRange(
   endLine: number
 ): Promise<GitBlameResult> {
   const git: SimpleGit = simpleGit(repoPath);
-  const raw = await git.raw(['blame', '-p', `-L${startLine},${endLine}`, '--', file]);
+  const raw = await git.raw(['blame', `-L${startLine},${endLine}`, '--', file]);
   const lines = raw.split('\n').filter(Boolean);
 
   const entries: BlameEntry[] = [];
   for (const line of lines) {
-    if (/^[a-f0-9]{40}/.test(line) && line.includes('(')) {
-      try { entries.push(parseBlame(line.replace(/^[a-f0-9]{40}/, m => m.slice(0, 8)))); }
-      catch { /* skip malformed */ }
+    if (/^[a-f0-9]{7,40}\s+\(/.test(line)) {
+      try {
+        const shortened = line.replace(/^([a-f0-9]{40})/, m => m.slice(0, 8));
+        entries.push(parseBlame(shortened));
+      } catch { /* skip malformed */ }
     }
   }
 
   // Find dominant commit (most frequent)
   const freq: Record<string, number> = {};
   for (const e of entries) freq[e.commitHash] = (freq[e.commitHash] || 0) + 1;
-  const dominant = entries.sort((a, b) => freq[b.commitHash] - freq[a.commitHash])[0];
+  const dominant = [...entries].sort((a, b) => freq[b.commitHash] - freq[a.commitHash])[0];
 
   if (!dominant) throw new Error(`No blame data for ${file}:${startLine}-${endLine}`);
 
   // Get full commit message for PR extraction
-  const log = await git.log({ from: dominant.commitHash + '^', to: dominant.commitHash, maxCount: 1 });
-  const message = log.latest?.message ?? '';
+  const showRaw = await git.raw(['show', '--no-patch', '--format=%s', dominant.commitHash]);
+  const message = showRaw.trim();
 
   return {
     dominantCommit: dominant.commitHash,
@@ -110,32 +112,28 @@ export async function blameRange(
 /** Get commit info by hash */
 export async function getCommit(repoPath: string, hash: string): Promise<CommitInfo> {
   const git: SimpleGit = simpleGit(repoPath);
-  const log = await git.log({ from: hash + '^', to: hash, maxCount: 1 });
-  const c = log.latest;
-  if (!c) throw new Error(`Commit not found: ${hash}`);
+  const raw = await git.raw(['show', '--no-patch', '--format=%H%n%an%n%aI%n%s', hash]);
+  const [fullHash, author, date, ...msgParts] = raw.trim().split('\n');
+  const message = msgParts.join('\n');
   return {
-    hash: c.hash.slice(0, 8),
-    author: c.author_name,
-    date: c.date,
-    message: c.message,
-    prNumber: parsePrReference(c.message),
+    hash: fullHash.slice(0, 8),
+    author,
+    date,
+    message,
+    prNumber: parsePrReference(message),
   };
 }
 
-/** Get recent commits touching a file region */
+/** Get recent commits touching a file (file-level history) */
 export async function getCommitsForRange(
   repoPath: string,
   file: string,
-  startLine: number,
-  endLine: number,
+  _startLine: number,
+  _endLine: number,
   limit = 5
 ): Promise<CommitInfo[]> {
   const git: SimpleGit = simpleGit(repoPath);
-  const log = await git.log({
-    file,
-    maxCount: limit,
-    '--': null,
-  });
+  const log = await git.log({ file, maxCount: limit });
   return log.all.map(c => ({
     hash: c.hash.slice(0, 8),
     author: c.author_name,
