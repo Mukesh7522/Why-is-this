@@ -75,6 +75,9 @@ export async function blameRange(
   startLine: number,
   endLine: number
 ): Promise<GitBlameResult> {
+  if (!Number.isInteger(startLine) || !Number.isInteger(endLine) || startLine <= 0 || endLine <= 0 || startLine > endLine) {
+    throw new Error(`Invalid line range: ${startLine}-${endLine}`);
+  }
   const git: SimpleGit = simpleGit(repoPath);
   const raw = await git.raw(['blame', `-L${startLine},${endLine}`, '--', file]);
   const lines = raw.split('\n').filter(Boolean);
@@ -143,8 +146,18 @@ export async function getCommitsForRange(
   }));
 }
 
-/** Read file lines from disk */
+const MAX_FILE_SIZE_BYTES = 10 * 1024 * 1024; // 10 MB
+
+/** Read file lines from disk. Validates path stays within repoPath. */
 export function readFileLines(repoPath: string, file: string): string[] {
-  const full = path.join(repoPath, file);
+  const full = path.resolve(repoPath, file);
+  const base = path.resolve(repoPath);
+  if (!full.startsWith(base + path.sep) && full !== base) {
+    throw new Error(`Path traversal rejected: "${file}" resolves outside repo root`);
+  }
+  const stat = fs.statSync(full);
+  if (stat.size > MAX_FILE_SIZE_BYTES) {
+    throw new Error(`File too large to read: "${file}" (${Math.round(stat.size / 1024 / 1024)} MB, max 10 MB)`);
+  }
   return fs.readFileSync(full, 'utf-8').split('\n');
 }

@@ -1,6 +1,5 @@
-import * as fs from 'fs';
-import * as path from 'path';
 import { listRationaleFiles } from '@why-is-this/core';
+import { writeOutput } from '../util';
 
 export async function runOnboard(targetPath: string, opts: { for?: string; output?: string }): Promise<void> {
   const repoPath = process.cwd();
@@ -57,8 +56,7 @@ export async function runOnboard(targetPath: string, opts: { for?: string; outpu
 
   const output = lines.join('\n');
   if (opts.output) {
-    fs.mkdirSync(path.dirname(path.resolve(opts.output)), { recursive: true });
-    fs.writeFileSync(opts.output, output, 'utf-8');
+    writeOutput(opts.output, output);
     console.log(`Onboarding guide written to ${opts.output}`);
   } else {
     process.stdout.write(output);

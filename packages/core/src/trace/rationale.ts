@@ -14,7 +14,12 @@ export function rationaleDir(repoPath: string): string {
   return path.join(repoPath, RATIONALE_DIR);
 }
 
+const SAFE_ID_RE = /^[a-z0-9][a-z0-9-]{0,127}$/;
+
 export function writeRationaleFile(repoPath: string, file: RationaleFile): string {
+  if (!SAFE_ID_RE.test(file.id)) {
+    throw new Error(`Invalid rationale id "${file.id}": must match [a-z0-9-], max 128 chars`);
+  }
   const dir = rationaleDir(repoPath);
   fs.mkdirSync(dir, { recursive: true });
   const filePath = path.join(dir, `${file.id}.json`);
@@ -55,8 +60,7 @@ export function findRationaleForRange(
 }
 
 export function checkHashDrift(currentLines: string[], storedHash: string): boolean {
-  // eslint-disable-next-line @typescript-eslint/no-var-requires
-  const { hashCodeRegion } = require('./git');
+  const { hashCodeRegion } = require('./git') as { hashCodeRegion: (lines: string[]) => string };
   const current = hashCodeRegion(currentLines);
   return current !== storedHash;
 }

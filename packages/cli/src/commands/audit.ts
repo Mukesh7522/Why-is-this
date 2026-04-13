@@ -3,6 +3,7 @@ import * as path from 'path';
 import { listRationaleFiles } from '@why-is-this/core';
 import { loadConfig } from '../config';
 import { formatAuditReport, AuditEntry, AuditSummary } from '../format/audit';
+import { writeOutput } from '../util';
 
 const DEFAULT_EXCLUDE = ['node_modules', 'dist', '.git', '.next', 'coverage'];
 
@@ -72,14 +73,14 @@ export async function runAudit(targetPath: string, opts: { output?: string; json
 
   if (opts.json) {
     const out = JSON.stringify({ ...summary, coverage: rationaleCount / Math.max(totalRegions, 1) }, null, 2);
-    if (opts.output) fs.writeFileSync(opts.output, out, 'utf-8');
+    if (opts.output) writeOutput(opts.output, out);
     else process.stdout.write(out + '\n');
     return;
   }
 
   const report = formatAuditReport(summary, !!opts.output);
   if (opts.output) {
-    fs.writeFileSync(opts.output, report, 'utf-8');
+    writeOutput(opts.output, report);
     console.log(`Audit report written to ${opts.output}`);
   } else {
     process.stdout.write(report);

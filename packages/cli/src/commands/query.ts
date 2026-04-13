@@ -13,9 +13,13 @@ export interface QueryOptions {
 export function parseFileArg(arg: string): { file: string; start: number; end: number } {
   const match = arg.match(/^(.+):(\d+)(?:-(\d+))?$/);
   if (!match) throw new Error(`Invalid format. Use: <file>:<line> or <file>:<start>-<end>`);
+  const file = match[1];
   const start = parseInt(match[2], 10);
   const end = match[3] ? parseInt(match[3], 10) : start;
-  return { file: match[1], start, end };
+  if (start <= 0 || end <= 0) throw new Error(`Line numbers must be positive integers`);
+  if (end < start) throw new Error(`End line (${end}) must be >= start line (${start})`);
+  if (end - start > 500) throw new Error(`Line range too large (max 500 lines)`);
+  return { file, start, end };
 }
 
 export async function runQuery(arg: string, opts: QueryOptions): Promise<void> {

@@ -10,8 +10,16 @@ export const vendorCheck: SurvivorshipCheck = {
     const pkgPath = path.join(repoPath, 'package.json');
     if (!fs.existsSync(pkgPath)) return null;
 
-    const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf-8'));
-    const deps = { ...(pkg.dependencies ?? {}), ...(pkg.devDependencies ?? {}) };
+    let pkg: Record<string, unknown>;
+    try {
+      pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf-8')) as Record<string, unknown>;
+    } catch {
+      return null; // malformed package.json — skip check
+    }
+    const deps: Record<string, string> = {
+      ...((pkg.dependencies as Record<string, string>) ?? {}),
+      ...((pkg.devDependencies as Record<string, string>) ?? {}),
+    };
 
     const pkgMatch = constraint.description.match(/\b([a-z][a-z0-9-]+)\b/i);
     if (!pkgMatch) return null;
