@@ -10,7 +10,8 @@
   },
   "dependencies": {
     "simple-git": "^3.22.0",
-    "@octokit/rest": "^20.0.0"
+    "@octokit/rest": "^20.0.0",
+    "@why-is-this/embeddings": "*"
   },
   "devDependencies": {
     "jest": "*",
