@@ -62,6 +62,23 @@ export async function trace(
     confidence: Math.max(commitScore, 0.35),
   });
 
+  // 5b. Additional commits from git log for this range (up to depth)
+  const recentCommits = await getCommitsForRange(repoPath, file, startLine, endLine, opts.depth ?? 5);
+  for (const c of recentCommits) {
+    if (c.hash === commitInfo.hash) continue; // dominant commit already added
+    const score = await scoreLink(c.message, codeText, provider);
+    rawLinks.push({
+      type: 'commit',
+      url: repoCoords
+        ? `https://github.com/${repoCoords.owner}/${repoCoords.repo}/commit/${c.hash}`
+        : c.hash,
+      author: c.author,
+      date: c.date,
+      excerpt: makeExcerpt(c.message),
+      confidence: Math.max(score, 0.35),
+    });
+  }
+
   // 6. PR + issue links
   let constraintLangText = '';
   if (repoCoords && token && blame.prNumber) {
@@ -109,7 +126,6 @@ export async function trace(
   );
 
   // 9. Fear signals
-  const recentCommits = await getCommitsForRange(repoPath, file, startLine, endLine, 10);
   const commits90d = recentCommits.filter(c => {
     const daysAgo = (Date.now() - new Date(c.date).getTime()) / (1000 * 86400);
     return daysAgo <= 90;
@@ -122,7 +138,7 @@ export async function trace(
 
   const signals: FearSignals = {
     ageDays: (Date.now() - new Date(blame.dominantDate).getTime()) / (1000 * 86400),
-    blameReads90d: 0,
+    blameReads90d: commits90d * 10, // proxy: each commit ≈ 10 blame reads (scaled to 0–200 norm range)
     commits90d,
     lastAuthorActive,
     distinctAuthors: new Set(blame.entries.map(e => e.author)).size,

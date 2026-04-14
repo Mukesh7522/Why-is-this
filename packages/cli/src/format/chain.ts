@@ -51,6 +51,13 @@ export function formatDecisionRecord(
     lines.push('');
   }
 
+  if (opts.short && !record.rationale && record.chain.length > 0) {
+    const top = record.chain[0];
+    lines.push(`  ${BOLD}WHY:${RESET} ${top.excerpt}`);
+    lines.push(`  ${DIM}${top.url}${RESET}`);
+    lines.push('');
+  }
+
   if (record.rationale && !opts.noSynth) {
     lines.push(`  ${BOLD}SYNTHESIZED RATIONALE${RESET}  ${'─'.repeat(41)}`);
     lines.push('');

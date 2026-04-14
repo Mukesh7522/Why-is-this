@@ -1,9 +1,21 @@
 import * as fs from 'fs';
 import * as path from 'path';
+import { execFileSync } from 'child_process';
 import { listRationaleFiles } from '@why-is-this/core';
 import { loadConfig } from '../config';
 import { formatAuditReport, AuditEntry, AuditSummary } from '../format/audit';
 import { writeOutput } from '../util';
+
+function gitCommitCount(repoPath: string, file: string): number {
+  try {
+    const out = execFileSync('git', ['log', '--oneline', '--', file], {
+      cwd: repoPath, encoding: 'utf-8', stdio: ['pipe', 'pipe', 'ignore'],
+    });
+    return out.trim().split('\n').filter(Boolean).length;
+  } catch {
+    return 0;
+  }
+}
 
 const DEFAULT_EXCLUDE = ['node_modules', 'dist', '.git', '.next', 'coverage'];
 
@@ -51,7 +63,11 @@ export async function runAudit(targetPath: string, opts: { output?: string; json
     } else {
       const stat = fs.statSync(file);
       const ageDays = (Date.now() - stat.mtimeMs) / (1000 * 86400);
-      const roughFear = Math.min(1, ageDays / 1825 * 0.4 + 0.3);
+      const commitCount = gitCommitCount(repoPath, rel);
+      // Weights consistent with core fearScore: age (25%), stagnation (30%), no-rationale (25%)
+      const ageNorm = Math.min(1, ageDays / 1825);
+      const activityNorm = Math.min(1, commitCount / 10);
+      const roughFear = ageNorm * 0.25 + (1 - activityNorm) * 0.30 + 0.25;
       if (roughFear > highFearThreshold) {
         highFearOrphans.push({ file: rel, startLine: 1, endLine: 1, fearScore: roughFear, hasRationale: false, busFactorScore: 1, survivorshipFlags: 0 });
       }
