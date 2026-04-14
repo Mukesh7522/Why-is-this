@@ -8,3 +8,4 @@ dist/
 graphify-out/
 .graphify_*
 docs/
+.claude/
