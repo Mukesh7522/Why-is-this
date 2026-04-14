@@ -1,10 +1,25 @@
 {
   "name": "@why-is-this/embeddings",
   "version": "0.1.0",
+  "description": "BM25 and embedding providers for why-is-this chain scoring",
+  "keywords": ["bm25", "embeddings", "similarity", "developer-tools"],
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Mukesh7522/Why-is-this.git",
+    "directory": "packages/embeddings"
+  },
+  "engines": {
+    "node": ">=18"
+  },
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
   "scripts": {
     "build": "tsc",
+    "prepare": "npm run build",
     "test": "jest"
   },
   "devDependencies": {
@@ -16,6 +31,8 @@
   "jest": {
     "preset": "ts-jest",
     "testEnvironment": "node",
-    "roots": ["<rootDir>/src"]
+    "roots": [
+      "<rootDir>/src"
+    ]
   }
 }

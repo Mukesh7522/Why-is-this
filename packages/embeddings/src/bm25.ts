@@ -2,6 +2,8 @@ const STOP_WORDS = new Set(['the','a','an','is','in','it','of','and','or','to','
 
 export function tokenize(text: string): string[] {
   return text
+    // Split camelCase and PascalCase before lowercasing: "fearScore" → "fear Score"
+    .replace(/([a-z])([A-Z])/g, '$1 $2')
     .toLowerCase()
     .split(/[^a-z0-9]+/)
     .filter(t => t.length > 1 && !STOP_WORDS.has(t));
@@ -29,7 +31,10 @@ export function bm25Score(query: string, document: string, k1 = 1.5, b = 0.75): 
     score += idf * tfNorm;
   }
 
-  // Normalize to 0–1 using max possible score
-  const maxScore = qTokens.length * Math.log(1.5) * (k1 + 1);
-  return Math.min(1, score / Math.max(maxScore, 1));
+  // Normalize: max score assumes every query term appears once in an avg-length doc
+  // idf constant = Math.log((1+0.5)/(0+0.5)+1) = Math.log(4) ≈ 1.386
+  const idfConst = Math.log(4);
+  const maxTfNorm = (k1 + 1) / (1 + k1 * (1 - b + b));  // tf=1, avgLen doc
+  const maxScore = new Set(qTokens).size * idfConst * maxTfNorm;
+  return Math.min(1, score / Math.max(maxScore, 1e-9));
 }

@@ -4,6 +4,12 @@ test('tokenize lowercases and splits on non-alpha', () => {
   expect(tokenize('Hello, World! foo-bar')).toEqual(['hello', 'world', 'foo', 'bar']);
 });
 
+test('tokenize splits camelCase and PascalCase', () => {
+  expect(tokenize('fearScore')).toEqual(['fear', 'score']);
+  expect(tokenize('BusFactorScore')).toEqual(['bus', 'factor', 'score']);
+  expect(tokenize('FearSignals')).toEqual(['fear', 'signals']);
+});
+
 test('bm25Score is 0 for empty query', () => {
   expect(bm25Score('', 'some document text')).toBe(0);
 });

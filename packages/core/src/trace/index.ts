@@ -50,7 +50,7 @@ export async function trace(
 
   // 5. Commit link
   const commitInfo = await getCommit(repoPath, blame.dominantCommit);
-  const commitScore = await scoreLink(codeText, commitInfo.message, provider);
+  const commitScore = await scoreLink(commitInfo.message, codeText, provider);
   rawLinks.push({
     type: 'commit',
     url: repoCoords
@@ -59,7 +59,7 @@ export async function trace(
     author: commitInfo.author,
     date: commitInfo.date,
     excerpt: makeExcerpt(commitInfo.message),
-    confidence: Math.max(commitScore, 0.5),
+    confidence: Math.max(commitScore, 0.35),
   });
 
   // 6. PR + issue links
@@ -67,7 +67,7 @@ export async function trace(
   if (repoCoords && token && blame.prNumber) {
     const pr = await fetchPr(token, repoCoords.owner, repoCoords.repo, blame.prNumber);
     if (pr) {
-      const prScore = await scoreLink(codeText, pr.title + ' ' + pr.body, provider);
+      const prScore = await scoreLink(pr.title + ' ' + pr.body, codeText, provider);
       rawLinks.push({
         type: 'pr_description', url: pr.url,
         author: pr.author, date: pr.date,
@@ -76,14 +76,14 @@ export async function trace(
       });
       constraintLangText += ' ' + pr.body;
       for (const c of pr.comments) {
-        const score = await scoreLink(codeText, c.body, provider);
+        const score = await scoreLink(c.body, codeText, provider);
         constraintLangText += ' ' + c.body;
         rawLinks.push({ type: 'pr_comment', url: c.url, author: c.author, date: c.date, excerpt: makeExcerpt(c.body), confidence: score });
       }
       for (const issueNum of pr.linkedIssues) {
         const issue = await fetchIssue(token, repoCoords.owner, repoCoords.repo, issueNum);
         if (issue) {
-          const score = await scoreLink(codeText, issue.title + ' ' + issue.body, provider);
+          const score = await scoreLink(issue.title + ' ' + issue.body, codeText, provider);
           rawLinks.push({ type: 'issue_body', url: issue.url, author: issue.author, date: issue.date, excerpt: makeExcerpt(issue.body), confidence: score });
           constraintLangText += ' ' + issue.body;
         }

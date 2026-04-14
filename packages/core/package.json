@@ -1,10 +1,25 @@
 {
   "name": "@why-is-this/core",
   "version": "0.1.0",
+  "description": "Core trace engine for why-is-this — git blame, fear scoring, rationale files, survivorship checks",
+  "keywords": ["git", "blame", "rationale", "fear-score", "developer-tools"],
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Mukesh7522/Why-is-this.git",
+    "directory": "packages/core"
+  },
+  "engines": {
+    "node": ">=18"
+  },
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
   "scripts": {
     "build": "tsc",
+    "prepare": "npm run build",
     "test": "jest",
     "dev": "tsc --watch"
   },
@@ -22,6 +37,8 @@
   "jest": {
     "preset": "ts-jest",
     "testEnvironment": "node",
-    "roots": ["<rootDir>/src"]
+    "roots": [
+      "<rootDir>/src"
+    ]
   }
 }

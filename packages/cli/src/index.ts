@@ -1,5 +1,9 @@
 #!/usr/bin/env node
+import { config as loadEnv } from 'dotenv';
 import { Command } from 'commander';
+
+// Load .env from cwd so GITHUB_TOKEN can be set without exporting
+loadEnv();
 import { runQuery } from './commands/query';
 
 const program = new Command();
